@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "sections": [
+    {
+      "id": "introduction",
+      "title": "المقدمة",
+      "titleEn": "Introduction",
+      "description": "نظرة عامة على نظام MyAcademy وأقسامه الرئيسية",
+      "descriptionEn": "Overview of the MyAcademy system and its main sections",
+      "requiredRole": null,
+      "order": 1,
+      "articles": [
+        {
+          "id": "intro-001",
+          "title": "مقدمة عن نظام MyAcademy",
+          "titleEn": "MyAcademy System Introduction",
+          "description": "نظرة عامة على النظام، أقسامه، ومفاهيمه الأساسية",
+          "descriptionEn": "Overview of the system, its sections, and basic concepts",
+          "filePath": "/tutorials/introduction/articles/system-introduction.md",
+          "readTime": "10 دقائق",
+          "readTimeEn": "10 min",
+          "difficulty": "beginner",
+          "order": 1
+        }
+      ],
+      "videos": []
+    },
+    {
+      "id": "auth",
+      "title": "التحكم في المستخدمين",
+      "titleEn": "User Management & Authentication",
+      "description": "تسجيل الدخول، إدارة المستخدمين، والصلاحيات",
+      "descriptionEn": "Login, user management, and permissions",
+      "requiredRole": null,
+      "order": 2,
+      "articles": [
+        {
+          "id": "auth-001",
+          "title": "دليل تسجيل الدخول",
+          "titleEn": "Login Guide",
+          "description": "شرح كامل لطريقة تسجيل الدخول، حل المشاكل الشائعة، وتسجيل الخروج",
+          "descriptionEn": "Complete guide for login, common issues, and logout",
+          "filePath": "/tutorials/Auth/articles/01-login-guide.md",
+          "readTime": "8 دقائق",
+          "readTimeEn": "8 min",
+          "difficulty": "beginner",
+          "order": 1
+        },
+        {
+          "id": "auth-002",
+          "title": "إدارة المستخدمين",
+          "titleEn": "User Management",
+          "description": "إضافة، عرض، وحذف المستخدمين مع شرح API",
+          "descriptionEn": "Add, view, and delete users with API explanation",
+          "filePath": "/tutorials/Auth/articles/02-user-management.md",
+          "readTime": "12 دقيقة",
+          "readTimeEn": "12 min",
+          "difficulty": "intermediate",
+          "order": 2
+        },
+        {
+          "id": "auth-003",
+          "title": "الأدوار والصلاحيات",
+          "titleEn": "Roles & Permissions",
+          "description": "شرح الأدوار (Admin, User) وكيفية فحص الصلاحيات في الكود",
+          "descriptionEn": "Explanation of roles and permission checking in code",
+          "filePath": "/tutorials/Auth/articles/03-roles-permissions.md",
+          "readTime": "10 دقائق",
+          "readTimeEn": "10 min",
+          "difficulty": "intermediate",
+          "order": 3
+        }
+      ],
+      "videos": []
+    }
+  ]
+}
