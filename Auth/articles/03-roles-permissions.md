@@ -5,7 +5,6 @@
 في نظام MyAcademy، يعمل نظام الأدوار (Roles) بشكل بسيط ومباشر. هذا الدليل يشرح:
 - ما هي الأدوار الموجودة؟
 - ما هي صلاحيات كل دور؟
-- كيف يتم التحقق من الصلاحيات في الكود؟
 
 ---
 
@@ -17,14 +16,12 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                  Admin (مدير النظام)                        │
 │                    👑 أعلى صلاحيات                           │
-│                   role_id = 1                               │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  User (مستخدم عادي)                         │
 │                    👤 صلاحيات محدودة                         │
-│                   role_id = 0 (أو null)                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,13 +35,7 @@
 
 ### كيف يُعرف في النظام؟
 
-```javascript
-// في قاعدة البيانات
-role_id = 1
-
-// في الكود (userInfo.js)
-isAdmin: (state) => state.user.role_id === 1
-```
+الـ Admin يُعرض في النظام بلون أحمر مميز في جداول المستخدمين.
 
 ### الصلاحيات الكاملة
 
@@ -74,17 +65,6 @@ isAdmin: (state) => state.user.role_id === 1
 
 الشخص العادي الذي يعمل في المركز التعليمي (مثل مدرس أو موظف استقبال).
 
-### كيف يُعرف في النظام؟
-
-```javascript
-// في قاعدة البيانات
-role_id = 0
-// أو role_id = null (افتراضي)
-
-// في الكود (userInfo.js)
-isAdmin: (state) => state.user.role_id === 1
-// إذا لم يكن 1، فهو User عادي
-```
 
 ### الصلاحيات المحدودة
 
@@ -110,7 +90,7 @@ isAdmin: (state) => state.user.role_id === 1
 
 ## جدول مقارنة سريع
 
-| الإجراء | Admin (role_id=1) | User (role_id=0) |
+| الإجراء | Admin | User |
 |---------|:-----------------:|:----------------:|
 | إضافة مستخدم | ✅ | ❌ |
 | حذف مستخدم | ✅ | ❌ |
@@ -128,183 +108,30 @@ isAdmin: (state) => state.user.role_id === 1
 
 ---
 
-## كيف يتم فحص الصلاحيات في الكود؟
-
-### ١. في المتجر (Store)
-
-ملف: `stores/userInfo.js`
-
-```javascript
-export const useUserInfoStore = defineStore('userInfo', {
-  state: () => ({
-    user: {
-      id: null,
-      name: '',
-      user_name: '',
-      email: '',
-      role_id: null, // 1: Admin, 0: User
-    },
-  }),
-
-  getters: {
-    // هل المستخدم Admin؟
-    isAdmin: (state) => state.user.role_id === 1,
-    
-    // الحصول على الدور كنص
-    getUserRole: (state) => {
-      if (state.user.role_id === 1) return 'admin'
-      else if (state.user.role_id === 0) return 'user'
-      else return 'unknown'
-    },
-  },
-})
-```
-
-### ٢. في المكونات (Components)
-
-```vue
-<script setup>
-import { useUserInfoStore } from '@/stores/userInfo'
-import { computed } from 'vue'
-
-const userStore = useUserInfoStore()
-
-// التحقق من Admin
-const isAdmin = computed(() => userStore.isAdmin)
-
-// أو مباشرة
-const canManageUsers = computed(() => userStore.getUserRoleID === 1)
-</script>
-
-<template>
-  <!-- إظهار زر إضافة مستخدم فقط للـ Admin -->
-  <Button v-if="isAdmin" @click="addUser">إضافة مستخدم</Button>
-  
-  <!-- أو -->
-  <Button v-if="userStore.isAdmin" @click="addUser">إضافة مستخدم</Button>
-</template>
-```
-
-### ٣. في الباك اند (Backend)
-
-ملف: `backend/app/Models/User.php`
-
-```php
-// التحقق من Admin
-public function isAdmin(): bool
-{
-    return $this->role_id === 1;
-}
-```
-
-ملف: `backend/routes/auth.php`
-
-```php
-// Routes تتطلب Admin
-Route::get('users', [AuthController::class, 'index'])
-    ->name('user.index')
-    ->middleware('CheckPermission');
-```
-
----
-
-## Middleware الصلاحيات
-
-### CheckJwtToken
-
-يتحقق من وجود توكن صالح:
-
-```php
-// في api.php
-Route::middleware('CheckJwtToken')->group(function () {
-    // هذه Routes تتطلب تسجيل دخول
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::get('users', [AuthController::class, 'index']);
-});
-```
-
-### CheckPermission
-
-يتحقق من صلاحيات محددة:
-
-```php
-// في auth.php
-Route::get('users', [AuthController::class, 'index'])
-    ->middleware('CheckPermission'); // يتحقق من Admin
-```
-
-### guest.jwt
-
-يسمح بالوصول للضيوف فقط (غير مسجلين):
-
-```php
-// في guest.php
-Route::middleware('guest.jwt')->group(function () {
-    Route::post('guest/login', [AuthController::class, 'login']);
-});
-```
-
----
-
 ## حماية الحسابات
 
 ### ١. لا يمكن حذف المدير الرئيسي
 
-لو حاولت حذف المستخدم ذو ID = 1:
-
-```php
-// في AuthController.php
-public function destroy(User $user)
-{
-    if ($user->id == 1) {
-        return $this->returnRes(false, null, 'لا يمكن حذف المدير الرئيسي', [], 200);
-    }
-    $user->delete();
-    return $this->returnRes(true, null, 'تم حذف المستخدم بنجاح', null, 200);
-}
-```
+لا يمكن حذف المدير الرئيسي للنظام. إذا حاولت، ستظهر رسالة خطأ.
 
 ### ٢. حماية البيانات
 
-- كلمة المرور: تُخزن مشفرة بـ Hash
-- JWT Token: يُخزن في Cookie httpOnly (لا يمكن قراءته من JavaScript)
-- الصلاحيات: تُفحص في الباكند ولا تعتمد على الفرونت فقط
+- كلمة المرور: تُخزن مشفرة في النظام
+- بيانات تسجيل الدخول: تُحفظ بشكل آمن في المتصفح
+- الصلاحيات: تُفحص في النظام بشكل آمن
 
 ---
 
-## استجابات API حسب الصلاحيات
+## رسائل النظام حسب الصلاحيات
 
-### ١. نجاح (Success)
+### ١. نجاح
+- "تمت العملية بنجاح" - عند إتمام أي عملية مسموحة
 
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "تمت العملية بنجاح"
-}
-```
+### ٢. خطأ في المصادقة
+- "انتهت صلاحية الجلسة" - عند انتهاء وقت تسجيل الدخول
 
-### ٢. خطأ في المصادقة (Authentication Error)
-
-```json
-{
-  "success": false,
-  "message": "انتهت صلاحية الجلسة"
-}
-```
-
-**HTTP Status:** 401 أو 432
-
-### ٣. خطأ في الصلاحيات (Permission Denied)
-
-```json
-{
-  "success": false,
-  "message": "غير مصرح لك بالوصول"
-}
-```
-
-**HTTP Status:** 403
+### ٣. خطأ في الصلاحيات
+- "غير مصرح لك بالوصول" - عند محاولة الوصول لقسم غير مسموح لك
 
 ---
 
@@ -312,11 +139,11 @@ public function destroy(User $user)
 
 ### س: كيف أجعل مستخدماً Admin؟
 
-**ج:** هذا يتطلب تغيير مباشر في قاعدة البيانات أو من خلال فريق الدعم الفني. قم بتعيين `role_id = 1` للمستخدم.
+**ج:** هذا يتم من خلال فريق الدعم الفني.
 
 ### س: هل يمكنني إنشاء دور جديد مثل "مدرس"؟
 
-**ج:** النظام حالياً يدعم دورين فقط: Admin و User. لإضافة أدوار جديدة، يتطلب ذلك تعديل في كود النظام.
+**ج:** النظام حالياً يدعم دورين فقط: Admin و User. لإضافة أدوار جديدة، تواصل مع فريق الدعم الفني.
 
 ### س: User يمكنه إضافة طلاب، هل هذا صحيح؟
 
@@ -330,86 +157,23 @@ public function destroy(User $user)
 
 ### س: ما هي البيانات التي يستلمها المستخدم بعد الدخول؟
 
-**ج:**
-
-```json
-{
-  "id": 5,
-  "name": "محمد علي",
-  "user_name": "mohamed.ali",
-  "email": "mohamed@academy.com",
-  "role_id": 1  // أو 0
-}
-```
+**ج:** يستلم المستخدم بياناته الأساسية مثل: الاسم، اسم المستخدم، البريد الإلكتروني، والدور (Admin أو User).
 
 ### س: كيف يعرف النظام أني Admin أم User؟
 
-**ج:** من خلال `role_id` في البيانات المُرسلة من الباكند بعد تسجيل الدخول.
+**ج:** يتم تحديد ذلك بناءً على بيانات حسابك المخزنة في النظام بعد تسجيل الدخول.
 
 ---
 
 ## ملخص سريع
 
-| الدور | role_id | لمن؟ | السلطة |
-|-------|---------|------|--------|
-| **Admin** | 1 | صاحب المركز، المدير | الكامل (مع إدارة المستخدمين) |
-| **User** | 0 أو null | المدرسين، موظفي الاستقبال | العمليات اليومية (بدون إدارة المستخدمين) |
+| الدور | لمن؟ | السلطة |
+|-------|------|--------|
+| **Admin** | صاحب المركز، المدير | الكامل (مع إدارة المستخدمين) |
+| **User** | المدرسين، موظفي الاستقبال | العمليات اليومية (بدون إدارة المستخدمين) |
 
 ---
 
-## كود فحص الصلاحيات (Reference)
-
-### Vue 3 (Composition API)
-
-```vue
-<script setup lang="ts">
-import { useUserInfoStore } from '@/stores/userInfo'
-import { storeToRefs } from 'pinia'
-
-const userStore = useUserInfoStore()
-const { isAdmin } = storeToRefs(userStore)
-
-// استخدم isAdmin.value للتحقق
-</script>
-```
-
-### Vue Router (Navigation Guard)
-
-```typescript
-// في router/index.ts
-router.beforeEach((to, from, next) => {
-  const userStore = useUserInfoStore()
-  
-  // إذا كانت الصفحة تتطلب Admin
-  if (to.meta.requiresAdmin && !userStore.isAdmin) {
-    next('/access-denied')
-    return
-  }
-  
-  next()
-})
-```
-
-### Laravel (Backend)
-
-```php
-// في Controller
-public function someAction()
-{
-    $user = auth('api_user')->user();
-    
-    if (!$user || $user->role_id !== 1) {
-        return response()->json([
-            'success' => false,
-            'message' => 'غير مصرح لك'
-        ], 403);
-    }
-    
-    // أكمل العملية...
-}
-```
-
----
 
 **هل تريد تغيير دور أحدهم؟** تواصل مع فريق الدعم الفني.
 
